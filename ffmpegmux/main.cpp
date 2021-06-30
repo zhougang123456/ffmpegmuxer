@@ -1,14 +1,31 @@
 #include "ffmpegmux.hpp"
 #include <iostream>
+
+static void dump_raw(uint8_t* outbuf, int size)
+{
+	static FILE* file = NULL;
+	if (file == NULL)
+	{
+		char Buf[128];
+		sprintf(Buf, "D:\\output.h265");
+		file = fopen(Buf, "wb");
+	}
+	if (file != NULL) {
+		fwrite(outbuf, size, 1, file);
+	}
+
+
+}
 int main(int argc, char** argv) {
     std::cout << "ffmpeg muxer";
     FFmpegMuxer* muxer = new FFmpegMuxer();
-    if (!muxer->init_video("mp4", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H264)) {
+    if (!muxer->init_video("mp4", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_HEVC)) {
 		printf("Cannot init video muxer\n");
 
     }
 	AVFormatContext* input_ctx = NULL;
-	const char* in_file = "d://oceans.h264";
+	//const char* in_file = "d://test.h265";
+	const char* in_file = "d://4k_hevc.h265";
 	int video_stream = 0, ret;
 	AVPacket packet;
 
@@ -35,6 +52,7 @@ int main(int argc, char** argv) {
 		if (video_stream == packet.stream_index)
 		{	
 			printf(" frame size:%d \n", packet.size);
+			//dump_raw(packet.data, packet.size);
 			muxer->mux_video(packet.data, packet.size);
 			
 		}
