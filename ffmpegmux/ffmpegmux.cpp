@@ -86,17 +86,31 @@ bool FFmpegMuxer::init_video(const char* mux_type, AVMediaType media_type, AVCod
     av_stream_->codecpar->sample_aspect_ratio.den = 1;
     av_stream_->codecpar->sample_aspect_ratio.num = 1;
     av_stream_->codecpar->codec_tag = 0;
-    if (code_id == AV_CODEC_ID_H264) {
+    AVDictionary* opts = NULL;
+
+    switch (code_id)
+    {
+    case AV_CODEC_ID_H264: 
+    {
         av_stream_->codecpar->extradata_size = sizeof(h264_extradata);
         av_stream_->codecpar->extradata = (uint8_t*)av_malloc(av_stream_->codecpar->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
         memcpy(av_stream_->codecpar->extradata, h264_extradata, sizeof(h264_extradata));
+        av_dict_set(&opts, "movflags", "frag_keyframe+empty_moov+default_base_moof", 0);
+        av_dict_set(&opts, "brand", "mp42", 0);
+        break;
     }
-    else {
+    case AV_CODEC_ID_HEVC:
+    {   
         av_stream_->codecpar->extradata_size = sizeof(h265_extradata);
         av_stream_->codecpar->extradata = (uint8_t*)av_malloc(av_stream_->codecpar->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
         memcpy(av_stream_->codecpar->extradata, h265_extradata, sizeof(h265_extradata));
+        av_dict_set(&opts, "movflags", "frag_keyframe+empty_moov+default_base_moof", 0);
+        av_dict_set(&opts, "brand", "mp42", 0);
+        break;
     }
-
+    default:
+        break;
+    }
 
     int buffer_size = 32767;
     unsigned char* outbuffer = (unsigned char*)av_malloc(buffer_size);
@@ -104,9 +118,7 @@ bool FFmpegMuxer::init_video(const char* mux_type, AVMediaType media_type, AVCod
     fmt_ctx_->pb = avio_ctx;
     fmt_ctx_->flags = AVFMT_FLAG_CUSTOM_IO;
     pkt_ = av_packet_alloc();
-    AVDictionary* opts = NULL;
-    av_dict_set(&opts, "movflags", "frag_keyframe+empty_moov+default_base_moof", 0);
-    av_dict_set(&opts, "brand", "mp42", 0);
+   
     avformat_write_header(fmt_ctx_, &opts);
     av_dict_free(&opts);
   
@@ -137,7 +149,7 @@ bool FFmpegMuxer::mux_video(uint8_t* data, int size)
     pkt_->stream_index = 0;
     pkt_->pts = timestamp_;
     pkt_->dts = timestamp_;
-    pkt_->duration = 10 * scale;
+    pkt_->duration = 40 * scale;
     timestamp_ += pkt_->duration;
     pkt_->data = data;
     pkt_->size = size;
@@ -158,6 +170,6 @@ int FFmpegMuxer::write_packet(void* opaque, uint8_t* buffer, int size)
  int FFmpegMuxer::write_video_packet(void* opaque, uint8_t * buffer, int size)
  {  
     printf(" packet size:%d \n", size);
-    dump_mp4(buffer, size);
+    dump_webm(buffer, size);
     return size;
  }

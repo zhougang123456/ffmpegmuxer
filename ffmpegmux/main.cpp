@@ -7,7 +7,7 @@ static void dump_raw(uint8_t* outbuf, int size)
 	if (file == NULL)
 	{
 		char Buf[128];
-		sprintf(Buf, "D:\\output.h265");
+		sprintf(Buf, "D:\\output.vp9");
 		file = fopen(Buf, "wb");
 	}
 	if (file != NULL) {
@@ -19,13 +19,13 @@ static void dump_raw(uint8_t* outbuf, int size)
 int main(int argc, char** argv) {
     std::cout << "ffmpeg muxer";
     FFmpegMuxer* muxer = new FFmpegMuxer();
-    if (!muxer->init_video("mp4", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_HEVC)) {
+    if (!muxer->init_video("webm", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_VP9)) {
 		printf("Cannot init video muxer\n");
 
     }
 	AVFormatContext* input_ctx = NULL;
 	//const char* in_file = "d://test.h265";
-	const char* in_file = "d://4k_hevc.h265";
+	const char* in_file = "d://vp9.webm";
 	int video_stream = 0, ret;
 	AVPacket packet;
 
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 		if (video_stream == packet.stream_index)
 		{	
 			printf(" frame size:%d \n", packet.size);
-			//dump_raw(packet.data, packet.size);
+			dump_raw(packet.data, packet.size);
 			muxer->mux_video(packet.data, packet.size);
 			
 		}
